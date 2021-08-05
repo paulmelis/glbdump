@@ -84,6 +84,7 @@ for idx, m in enumerate(j['meshes']):
     texcoord0 = 0
     texcoord1 = 0
     indices = 0
+    modes = set([])
     for p in m['primitives']:
         attrs = p['attributes']
         vertices += accessors[attrs['POSITION']]['count']
@@ -96,9 +97,18 @@ for idx, m in enumerate(j['meshes']):
         if 'TEXCOORD_1' in attrs:
             texcoord1 += accessors[attrs['TEXCOORD_1']]['count']
         indices += accessors[p['indices']]['count']
+        if 'mode' in p:
+            modes.add(p['mode'])
+        else:
+            # Triangles by default
+            modes.add(4)
         
-    s = '[%4d] %-30s  %4dP %8sV %8sI' % \
-        (idx, '"'+m['name']+'"', len(m['primitives']), format(vertices, ',d'), format(indices, ',d'))
+    # See primitive.mode in gltf spec
+    modechars = ['P', 'L', 'LL', 'LS', 'T', 'TS', 'TF']
+    modes = ','.join(map(lambda m: modechars[m], modes))
+    
+    s = '[%4d] %-20s  %4dP %-5s %8sV %8sI' % \
+        (idx, '"'+m['name']+'"', len(m['primitives']), modes, format(vertices, ',d'), format(indices, ',d'))
     
     if color0 > 0:
         s += ' %8sC0' % format(color0, ',d')
