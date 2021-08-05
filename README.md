@@ -75,4 +75,4 @@ coordinates these would be listed as `T1`. Vertex colors would be listed as `C0`
 
 This tool has only been run on a limited number of .glb files and so will probably
 not handle all of them correctly. Also, not all possible contents of a glTF file
-is handled.
+is dumped as output.
