@@ -5,10 +5,10 @@ when used in the binary (.glb) form. But sometimes you want to inspect what
 exactly is inside a .glb file. For example, to check what makes a file so large, 
 or to see the sizes of the different meshes.
 
-You could check the JSON chunk at the start of a .glb file, but it's not really
-convenient. Hence this little utility script.
+You could check the JSON chunk at the start of a .glb file, but that's not 
+really convenient. Hence this little utility script.
 
-Dependencies: only Python 3.x
+Dependencies: Python 3.x
 
 ## Example
 
@@ -55,3 +55,24 @@ Accessors:
 [   3]   14,556x  VEC2    FLOAT               116,448 bytes
 
 ```
+
+## Output
+
+Most of the output should be straightforward to understand. Perhaps the only
+thing needing a bit more explanation is how meshes are listed. For example, 
+
+```
+[   0] "mesh_helmet_LP_13930damagedHelmet"     1P T       14,556V   46,356I   14,556N   14,556T0
+```
+
+shows that mesh 0 consists of a single primitive (`1P`), where each primitive
+translates in more-or-less a draw call. That primitive contains TRIANGLES (`T`),
+has 14,556 vertices, is drawn using 46,356 indices, has 14,556 normals and
+14,556 texture coordinates (first set). If there were a second set of texture
+coordinates these would be listed as `T1`. Vertex colors would be listed as `C0`. 
+
+## Disclaimer
+
+This tool has only been run on a limited number of .glb files and so will probably
+not handle all of them correctly. Also, not all possible contents of a glTF file
+is handled.
