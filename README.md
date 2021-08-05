@@ -66,9 +66,12 @@ thing needing a bit more explanation is how meshes are listed. For example,
 ```
 
 shows that mesh 0 consists of a single primitive (`1P`), where each primitive
-translates in more-or-less a draw call. That primitive contains TRIANGLES (`T`),
-has 14,556 vertices, is drawn using 46,356 indices, has 14,556 normals and
-14,556 texture coordinates (first set). If there were a second set of texture
+is usually turned into a single draw call. This particular primitive is drawn as
+TRIANGLES (`T`), but other types are TRIANGLE_STRIP (`TS`), TRIANGLE_FAN (`TF`),
+LINES (`L`), LINE_LOOP (`LL`), LINE_STRIP (`LS`) or POINTS (`P`).
+
+The primitive has 14,556 vertices (`14,556V`), is drawn using 46,356 indices, has 14,556 normals 
+and 14,556 texture coordinates (first set). If there were a second set of texture
 coordinates these would be listed as `T1`. Vertex colors would be listed as `C0`. 
 
 ## Disclaimer
