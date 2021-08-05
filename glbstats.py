@@ -73,20 +73,43 @@ print('Images:')
 for idx, i in enumerate(j['images']):
     bv = i['bufferView']
     length = bufferviews[bv]['byteLength']
-    print('[%4d] %11s  %-12s "%s"' % (idx, format(length,',d'), i['mimeType'], i['name']))
+    print('[%4d] %11s bytes  %-12s "%s"' % (idx, format(length,',d'), i['mimeType'], i['name']))
     
 print()
 print('Meshes:')
 for idx, m in enumerate(j['meshes']):
-    counts = dict(VEC2=0, VEC3=0, SCALAR=0)
+    vertices = 0
+    normals = 0
+    color0 = 0
+    texcoord0 = 0
+    texcoord1 = 0
+    indices = 0
     for p in m['primitives']:
-        acidx = p['indices']
-        accessor = accessors[acidx]
-        actype = accessor['type']
-        counts[actype] += accessor['count']    
-    print('[%4d] %4dP %4dV2 %4dV3 %4dS "%s"' % \
-        (idx, len(m['primitives']), counts['VEC2'], counts['VEC3'], counts['SCALAR'], m['name']))
-
+        attrs = p['attributes']
+        vertices += accessors[attrs['POSITION']]['count']
+        if 'NORMAL' in attrs:
+            normals += accessors[attrs['NORMAL']]['count']
+        if 'COLOR_0' in attrs:
+            color0 += accessors[attrs['COLOR_0']]['count']
+        if 'TEXCOORD_0' in attrs:
+            texcoord0 += accessors[attrs['TEXCOORD_0']]['count']
+        if 'TEXCOORD_1' in attrs:
+            texcoord1 += accessors[attrs['TEXCOORD_1']]['count']
+        indices += accessors[p['indices']]['count']
+        
+    s = '[%4d] %-30s  %4dP %8sV %8sI' % \
+        (idx, '"'+m['name']+'"', len(m['primitives']), format(vertices, ',d'), format(indices, ',d'))
+    
+    if color0 > 0:
+        s += ' %8sC0' % format(color0, ',d')
+    if normals > 0:
+        s += ' %8sN' % format(normals, ',d')
+    if texcoord0 > 0:
+        s += ' %8sT0' % format(texcoord0, ',d')
+    if texcoord1 > 0:
+        s += ' %8sT1' % format(texcoord1, ',d')
+        
+    print(s)
 
 print()
 print('Materials:')
