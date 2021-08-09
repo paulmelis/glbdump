@@ -104,7 +104,7 @@ if 'images' in j:
     totalimsize = 0
     for i in j['images']:
         totalimsize += bufferviews[i['bufferView']]['byteLength']
-    print('%4d images     (total %s bytes)' % (len(j['images']), format(totalimsize, ',d')))
+    print('%4d images     (%s bytes)' % (len(j['images']), format(totalimsize, ',d')))
 if 'materials' in j:
     print('%4d materials' % len(j['materials']))
 if 'meshes' in j:    
@@ -116,12 +116,12 @@ print()
 totalbufsize = 0
 for b in buffers:
     totalbufsize += b['byteLength']
-print('%4d buffers    (total %s bytes)' % (len(buffers), format(totalbufsize, ',d')))
+print('%4d buffers    (%s bytes)' % (len(buffers), format(totalbufsize, ',d')))
 
 totalaccsize = 0
 for a in accessors:
     totalaccsize += bufferviews[a['bufferView']]['byteLength']
-print('%4d accessors  (total %s bytes)' % (len(accessors), format(totalaccsize, ',d')))
+print('%4d accessors  (%s bytes)' % (len(accessors), format(totalaccsize, ',d')))
 
 if 'images' in j:
     print()
@@ -151,11 +151,33 @@ if 'images' in j:
             o.write(imgfiledata)
             o.close()
             
+component_sizes = {
+    5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4
+}
     
+component_types = {
+    5120: 'BYTE', 5121: 'UNSIGNED_BYTE', 5122: 'SHORT', 5123: 'UNSIGNED_SHORT', 
+    5125: 'UNSIGNED_INT', 5126: 'FLOAT'
+}
+
+array_types = {
+    5120: 'b', 5121: 'B', 5122: 'h', 5123: 'H', 
+    5125: 'I', 5126: 'f'
+}
+
+component_elements = {
+    'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4
+}
+    
+def accessor_size(accidx):
+    a = accessors[accidx]
+    return a['count'] * component_sizes[a['componentType']] * component_elements[a['type']]
+
 if 'meshes' in j:
     print()
     print('Meshes:')
     for meshidx, m in enumerate(j['meshes']):
+        total_accessor_size = 0
         vertices = 0
         normals = 0
         color0 = 0
@@ -166,24 +188,36 @@ if 'meshes' in j:
         for primidx, p in enumerate(m['primitives']):
             attrs = p['attributes']
             
-            vertices += accessors[attrs['POSITION']]['count']
-            accessor_uses[attrs['POSITION']] = (meshidx, primidx, 'P')
+            accidx = attrs['POSITION']
+            vertices += accessors[accidx]['count']
+            accessor_uses[accidx] = (meshidx, primidx, 'P')
+            total_accessor_size += accessor_size(accidx)
             
             if 'NORMAL' in attrs:
-                normals += accessors[attrs['NORMAL']]['count']
-                accessor_uses[attrs['NORMAL']] = (meshidx, primidx, 'N')
+                accidx = attrs['NORMAL']
+                normals += accessors[accidx]['count']
+                accessor_uses[accidx] = (meshidx, primidx, 'N')
+                total_accessor_size += accessor_size(accidx)
             if 'COLOR_0' in attrs:
-                color0 += accessors[attrs['COLOR_0']]['count']
-                accessor_uses[attrs['COLOR_0']] = (meshidx, primidx, 'C0')
+                accidx = attrs['COLOR_0']
+                color0 += accessors[idx]['count']
+                accessor_uses[accidx] = (meshidx, primidx, 'C0')
+                total_accessor_size += accessor_size(accidx)
             if 'TEXCOORD_0' in attrs:
-                texcoord0 += accessors[attrs['TEXCOORD_0']]['count']
-                accessor_uses[attrs['TEXCOORD_0']] = (meshidx, primidx, 'T0')
+                accidx = attrs['TEXCOORD_0']
+                texcoord0 += accessors[accidx]['count']
+                accessor_uses[accidx] = (meshidx, primidx, 'T0')
+                total_accessor_size += accessor_size(accidx)
             if 'TEXCOORD_1' in attrs:
-                texcoord1 += accessors[attrs['TEXCOORD_1']]['count']
-                accessor_uses[attrs['TEXCOORD_1']] = (meshidx, primidx, 'T1')
+                accidx = attrs['TEXCOORD_1']
+                texcoord1 += accessors[accidx]['count']
+                accessor_uses[accidx] = (meshidx, primidx, 'T1')
+                total_accessor_size += accessor_size(accidx)
                 
-            indices += accessors[p['indices']]['count']
-            accessor_uses[p['indices']] = (meshidx, primidx, 'I')
+            accidx = p['indices']
+            indices += accessors[accidx]['count']
+            accessor_uses[accidx] = (meshidx, primidx, 'I')
+            total_accessor_size += accessor_size(accidx)
             
             if 'mode' in p:
                 modes.add(p['mode'])
@@ -195,9 +229,12 @@ if 'meshes' in j:
         modechars = ['P', 'L', 'LL', 'LS', 'T', 'TS', 'TF']
         modes = ','.join(map(lambda m: modechars[m], modes))
         
-        s = '[%4d] %-25s  %4dP %-5s %8sV %8sI' % \
-            (meshidx, '"'+m['name']+'"', len(m['primitives']), modes, format(vertices, ',d'), format(indices, ',d'))
+        s = '[%4d] %-25s  %4dP %-5s  %12s bytes accessor data' % \
+            (meshidx, '"'+m['name']+'"', len(m['primitives']), modes, format(total_accessor_size, ',d'))
+            
+        print(s)
         
+        s = '       %8sV %8sI' % (format(vertices, ',d'), format(indices, ',d'))
         if color0 > 0:
             s += ' %8sC0' % format(color0, ',d')
         if normals > 0:
@@ -254,22 +291,11 @@ print('Buffers:')
 for idx, b in enumerate(buffers):
     print('[%4d] %11s bytes' % (idx, format(b['byteLength'], ',d')))
     
-
-component_types = {
-    5120: 'BYTE', 5121: 'UNSIGNED_BYTE', 5122: 'SHORT', 5123: 'UNSIGNED_SHORT', 
-    5125: 'UNSIGNED_INT', 5126: 'FLOAT'
-}
-
-array_types = {
-    5120: 'b', 5121: 'B', 5122: 'h', 5123: 'H', 
-    5125: 'I', 5126: 'f'
-}
-
 fmt_strings = {
     5120: '%3d', 5121: '%3d', 5122: '%5d', 5123: '%5d', 
     5125: '%10d', 5126: '%12.6f'
 }
-    
+
 print()
 print('Accessors:')
 for idx, accessor in enumerate(accessors):
