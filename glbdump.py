@@ -123,6 +123,13 @@ for a in accessors:
     totalaccsize += bufferviews[a['bufferView']]['byteLength']
 print('%4d accessors  (%s bytes)' % (len(accessors), format(totalaccsize, ',d')))
 
+if 'cameras' in j:
+    print()
+    print('Cameras:')
+    for idx, c in enumerate(j['cameras']):        
+        name = '"'+c['name']+'"' if 'name' in c else '<unnamed>'
+        print('[%4d] %-12s  %-25s' % (idx, c['type'], name))
+
 if 'images' in j:
     print()
     print('Images:')
@@ -130,10 +137,10 @@ if 'images' in j:
         bv = bufferviews[i['bufferView']]
         length = bv['byteLength']
         
-        name = i['name'] if '"name"' in i else '<unnamed>'
+        name = '"'+i['name']+'"' if 'name' in i else '<unnamed>'
         mimetype = i['mimeType']
         
-        print('[%4d] %11s bytes  %-12s %s' % (idx, format(length,',d'), i['mimeType'], name))
+        print('[%4d] %12s bytes  %-12s %s' % (idx, format(length,',d'), i['mimeType'], name))
         
         if dump_images:            
             assert bv['buffer'] == 0
@@ -229,8 +236,8 @@ if 'meshes' in j:
         modechars = ['P', 'L', 'LL', 'LS', 'T', 'TS', 'TF']
         modes = ','.join(map(lambda m: modechars[m], modes))
         
-        s = '[%4d] %-25s  %4dP %-5s  %12s bytes accessor data' % \
-            (meshidx, '"'+m['name']+'"', len(m['primitives']), modes, format(total_accessor_size, ',d'))
+        s = '[%4d] %12s bytes  %4dP %-5s  %s' % \
+            (meshidx, format(total_accessor_size, ',d'), len(m['primitives']), modes, '"'+m['name']+'"')
             
         print(s)
         
@@ -284,7 +291,7 @@ if 'materials' in j:
         else:
             textures = ''
         
-        print('[%4d] %-25s  %2s  %-11s  %s' % (idx, name, double_sided, alpha_mode, textures))
+        print('[%4d] %2s  %-11s  %-15s %s' % (idx, double_sided, alpha_mode, textures, name))
 
 print()
 print('Buffers:')
