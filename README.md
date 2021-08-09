@@ -74,6 +74,10 @@ The primitive has 14,556 vertices (`14,556V`), is drawn using 46,356 indices, ha
 and 14,556 texture coordinates (first set). If there were a second set of texture
 coordinates these would be listed as `T1`. Vertex colors would be listed as `C0`. 
 
+## Options
+
+You can dump the embedded images to files with the `-i` option.
+
 ## Disclaimer
 
 This tool has only been run on a limited number of .glb files and so will probably

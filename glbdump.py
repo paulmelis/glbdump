@@ -3,8 +3,25 @@
 import sys, json, os
 from struct import unpack
 
-stats = os.stat(sys.argv[1])
-f = open(sys.argv[1], 'rb')
+if len(sys.argv) < 1:
+    print('Usage: %s [options] file.glb' % sys.argv[0])
+    print()
+    print('Options:')
+    print('  -i  Dump images to files')
+    print()
+    sys.exit(-1)
+
+glbfile = sys.argv[-1]
+assert os.path.isfile(glbfile)
+options = sys.argv[1:-1]
+
+dump_images = False
+
+if '-i' in options:
+    dump_images = True
+
+stats = os.stat(glbfile)
+f = open(glbfile, 'rb')
 
 if f.read(4) != b'glTF':
     print("This doesn't appear to be a Binary glTF file!")
@@ -34,11 +51,35 @@ print('JSON chunk (%s bytes)' % format(chunk_length, ',d'))
 js = f.read(chunk_length).decode('utf8')
 j = json.loads(js)
 
-f.close()
-
 buffers = j['buffers']
 bufferviews = j['bufferViews']
 accessors = j['accessors']
+
+# Load buffer data, if needed
+
+buffer0data = None
+
+if dump_images:
+    
+    # Load binary buffer chunk
+    chunk_length = unpack('<I', f.read(4))[0]
+    chunk_type = f.read(4)
+    if chunk_type != b'BIN\x00':
+        print('Second chunk is not of type BIN!')
+        sys.exit(-1)
+            
+    print('BIN chunk (%s bytes)' % format(chunk_length, ',d'))
+    
+    assert len(buffers) == 1
+    assert 'uri' not in buffers[0]
+    
+    # BIN chunk might be up to 3 bytes longer than buffer, to satisfy GLB padding
+    bindatasize = min(buffers[0]['byteLength'], chunk_length)
+    buffer0data = memoryview(f.read(bindatasize))
+
+f.close()
+
+# Dump!
 
 print()
 print('Asset version %s' % j['asset']['version'])
@@ -78,10 +119,30 @@ if 'images' in j:
     print()
     print('Images:')
     for idx, i in enumerate(j['images']):
-        bv = i['bufferView']
-        length = bufferviews[bv]['byteLength']
+        bv = bufferviews[i['bufferView']]
+        length = bv['byteLength']
+        
         name = i['name'] if '"name"' in i else '<unnamed>'
+        mimetype = i['mimeType']
+        
         print('[%4d] %11s bytes  %-12s %s' % (idx, format(length,',d'), i['mimeType'], name))
+        
+        if dump_images:            
+            assert bv['buffer'] == 0
+            offset = bv['byteOffset']
+            imgfiledata = buffer0data[offset:offset+length]            
+            try:
+                ext = {
+                    'image/jpeg':   'jpg',
+                    'image/png' :   'png'
+                }[mimetype]
+            except:
+                ext = '.bin'
+                
+            o = open('img-%04d.%s' % (idx, ext), 'wb')
+            o.write(imgfiledata)
+            o.close()
+            
     
 if 'meshes' in j:
     print()
