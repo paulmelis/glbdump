@@ -135,7 +135,40 @@ if 'materials' in j:
     print('Materials:')
     for idx, m in enumerate(j['materials']):
         name = '"'+m['name']+'"' if 'name' in m else '<unnamed>'
-        print('[%4d] %s' % (idx, name))
+        
+        double_sided = '2S' if ('doubleSided' in m and m['doubleSided']) else ''
+        
+        textures = []
+        if 'pbrMetallicRoughness' in m:
+            #'metallic-roughness'
+            mr = m['pbrMetallicRoughness']
+            if 'baseColorTexture' in mr:
+                textures.append('BC')
+            if 'metallicRoughnessTexture' in mr:
+                textures.append('MR')
+            
+        if 'normalTexture' in m:
+            textures.append('N')
+        if 'emissiveTexture' in m:
+            textures.append('E')
+        if 'occlusionTexture' in m:
+            textures.append('O')
+        
+        alpha_mode = 'opaque'
+        if 'alphaMode' in m:
+            if m['alphaMode'] == 'MASK':
+                alpha_mode = 'alpha-mask'
+            elif m['alphaMode'] == 'BLEND':
+                alpha_mode = 'alpha-blend'
+            else:
+                assert m['alphaMode'] == 'OPAQUE'  
+
+        if len(textures) > 0:
+            textures = '[%s]' % (' '.join(textures))
+        else:
+            textures = ''
+        
+        print('[%4d] %-25s  %2s  %-11s  %s' % (idx, name, double_sided, alpha_mode, textures))
 
 print()
 print('Buffers:')
