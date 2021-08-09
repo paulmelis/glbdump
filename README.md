@@ -56,6 +56,12 @@ Accessors:
 
 ```
 
+## Options
+
+You can dump the embedded images to files with the `-i` option.
+
+You can dump the row values in the accessors with the `-a` option.
+
 ## Output
 
 Most of the output should be straightforward to understand. Perhaps the only
@@ -73,10 +79,6 @@ LINES (`L`), LINE_LOOP (`LL`), LINE_STRIP (`LS`) or POINTS (`P`).
 The primitive has 14,556 vertices (`14,556V`), is drawn using 46,356 indices, has 14,556 normals 
 and 14,556 texture coordinates (first set). If there were a second set of texture
 coordinates these would be listed as `T1`. Vertex colors would be listed as `C0`. 
-
-## Options
-
-You can dump the embedded images to files with the `-i` option.
 
 ## Disclaimer
 

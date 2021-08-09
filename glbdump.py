@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#glb-file-format-specification
-import sys, json, os
+import sys, array, json, os
 from struct import unpack
 
 if len(sys.argv) < 1:
@@ -8,6 +8,7 @@ if len(sys.argv) < 1:
     print()
     print('Options:')
     print('  -i  Dump images to files')
+    print('  -a  Dump accessor values')
     print()
     sys.exit(-1)
 
@@ -16,9 +17,15 @@ assert os.path.isfile(glbfile)
 options = sys.argv[1:-1]
 
 dump_images = False
+dump_accessor_values = False
+read_binary_chunk = False
 
 if '-i' in options:
     dump_images = True
+    read_binary_chunk = True
+if '-a' in options:
+    dump_accessor_values = True
+    read_binary_chunk = True
 
 stats = os.stat(glbfile)
 f = open(glbfile, 'rb')
@@ -58,8 +65,9 @@ accessors = j['accessors']
 # Load buffer data, if needed
 
 buffer0data = None
+accessor_uses = {}
 
-if dump_images:
+if read_binary_chunk:
     
     # Load binary buffer chunk
     chunk_length = unpack('<I', f.read(4))[0]
@@ -147,7 +155,7 @@ if 'images' in j:
 if 'meshes' in j:
     print()
     print('Meshes:')
-    for idx, m in enumerate(j['meshes']):
+    for meshidx, m in enumerate(j['meshes']):
         vertices = 0
         normals = 0
         color0 = 0
@@ -155,30 +163,40 @@ if 'meshes' in j:
         texcoord1 = 0
         indices = 0
         modes = set([])
-        for p in m['primitives']:
+        for primidx, p in enumerate(m['primitives']):
             attrs = p['attributes']
+            
             vertices += accessors[attrs['POSITION']]['count']
+            accessor_uses[attrs['POSITION']] = (meshidx, primidx, 'P')
+            
             if 'NORMAL' in attrs:
                 normals += accessors[attrs['NORMAL']]['count']
+                accessor_uses[attrs['NORMAL']] = (meshidx, primidx, 'N')
             if 'COLOR_0' in attrs:
                 color0 += accessors[attrs['COLOR_0']]['count']
+                accessor_uses[attrs['COLOR_0']] = (meshidx, primidx, 'C0')
             if 'TEXCOORD_0' in attrs:
                 texcoord0 += accessors[attrs['TEXCOORD_0']]['count']
+                accessor_uses[attrs['TEXCOORD_0']] = (meshidx, primidx, 'T0')
             if 'TEXCOORD_1' in attrs:
                 texcoord1 += accessors[attrs['TEXCOORD_1']]['count']
+                accessor_uses[attrs['TEXCOORD_1']] = (meshidx, primidx, 'T1')
+                
             indices += accessors[p['indices']]['count']
+            accessor_uses[p['indices']] = (meshidx, primidx, 'I')
+            
             if 'mode' in p:
                 modes.add(p['mode'])
             else:
                 # Triangles by default
-                modes.add(4)
+                modes.add(4)                                    
             
         # See primitive.mode in gltf spec
         modechars = ['P', 'L', 'LL', 'LS', 'T', 'TS', 'TF']
         modes = ','.join(map(lambda m: modechars[m], modes))
         
         s = '[%4d] %-25s  %4dP %-5s %8sV %8sI' % \
-            (idx, '"'+m['name']+'"', len(m['primitives']), modes, format(vertices, ',d'), format(indices, ',d'))
+            (meshidx, '"'+m['name']+'"', len(m['primitives']), modes, format(vertices, ',d'), format(indices, ',d'))
         
         if color0 > 0:
             s += ' %8sC0' % format(color0, ',d')
@@ -241,18 +259,61 @@ component_types = {
     5120: 'BYTE', 5121: 'UNSIGNED_BYTE', 5122: 'SHORT', 5123: 'UNSIGNED_SHORT', 
     5125: 'UNSIGNED_INT', 5126: 'FLOAT'
 }
+
+array_types = {
+    5120: 'b', 5121: 'B', 5122: 'h', 5123: 'H', 
+    5125: 'I', 5126: 'f'
+}
+
+fmt_strings = {
+    5120: '%3d', 5121: '%3d', 5122: '%5d', 5123: '%5d', 
+    5125: '%10d', 5126: '%12.6f'
+}
     
 print()
 print('Accessors:')
-for idx, a in enumerate(accessors):
-    bytelength = bufferviews[a['bufferView']]['byteLength']
-    comptype = a['componentType']
+for idx, accessor in enumerate(accessors):
+    bv = bufferviews[accessor['bufferView']]
+    bytelength = bv['byteLength']
+    byteoffset = bv['byteOffset']
+    
+    comptype = accessor['componentType']
     if comptype not in component_types:
-        comptype = '??? (%d)' % comptype
+        compdesc = '??? (%d)' % comptype
     else:
-        comptype = component_types[comptype]
-    print('[%4d] %8sx  %-6s  %-14s  %11s bytes' % \
-        (idx, format(a['count'], ',d'), a['type'], comptype, format(bytelength, ',d')))
-
-
+        compdesc = component_types[comptype]
+        
+    type = accessor['type']
+    count = accessor['count']
+    
+    meshidx, primidx, use = accessor_uses[idx]
+        
+    print('[%4d] %8sx  %-6s  %-14s  %11s bytes  (M%d "%s", P%d, %s)' % \
+        (idx, format(count, ',d'), type, compdesc, format(bytelength, ',d'), meshidx, j['meshes'][meshidx]['name'], primidx, use))
+            
+    if dump_accessor_values and (comptype in component_types):        
+        
+        a = array.array(array_types[comptype])
+        a.frombytes(buffer0data[byteoffset:byteoffset+bytelength])
+        
+        nfmt = fmt_strings[comptype]
+        if type == 'SCALAR':
+            fmt = '  [%04d] ' + nfmt
+            for idx in range(count):   
+                print(fmt % (idx, a[idx]))
+        elif type == 'VEC2':
+            fmt = '  [%04d] ' + nfmt + ' ' + nfmt + ' '
+            for idx in range(0, count):               
+                print(fmt % (idx, a[2*idx], a[2*idx+1]))
+        elif type == 'VEC3':
+            fmt = '  [%04d] ' + nfmt + ' ' + nfmt + ' ' + nfmt + ' '
+            for idx in range(0, count):               
+                print(fmt % (idx, a[3*idx], a[3*idx+1], a[3*idx+2]))
+        elif type == 'VEC4':
+            fmt = '  [%04d] ' + nfmt + ' ' + nfmt + ' ' + nfmt + ' ' + nfmt + ' '
+            for idx in range(0, count):               
+                print(fmt % (idx, a[4*idx], a[4*idx+1], a[4*idx+2], a[4*idx+3]))
+        else:
+            raise ValueError('Unhandled accessor type "%s"' % type)
+        
 print()
