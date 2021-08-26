@@ -61,8 +61,8 @@ Accessors:
 
 ```
 
-The .glb file is 3.7 MB, of which 3.2 MB for 5 images (used as textures)
-and 559 kB for mesh data. 
+Apart from the detailed contents it can be seen that of the 3.7 MB making up
+the .glb file 3.2 MB is used for 5 images (textures) and 559 kB for mesh data. 
 
 
 ## Output
@@ -78,19 +78,19 @@ Meshes:
             558,504 bytes    1P T      14,556V   46,356I   14,556N   14,556T0
 ```
 
-This shows that mesh 0 consists of a single primitive (`1P`). In use of glTF data each 
-primitive is usually turned into a single draw call. This particular primitive is 
+This shows that mesh 0 consists of a single primitive (`1P`). Each set of primitive 
+data is usually turned into a single draw call. This particular primitive is 
 drawn as a set of TRIANGLES (`T`). The possible types are:
 
-    Type    Primitive mode
-    -----   --------------
-    `T`     `TRIANGLES`
-    `TS`    `TRIANGLE_STRIP`
-    `TF`    `TRIANGLE_FAN`
-    `L`     `LINES`
-    `LL`    `LINE_LOOP`
-    `LS`    `LINE_STRIP`
-    `P`     `POINTS`
+    | Type  | Primitive mode   |
+    | ----- | ---------------- |
+    | `T`   | `TRIANGLES`      |
+    | `TS`  | `TRIANGLE_STRIP` |
+    | `TF`  | `TRIANGLE_FAN`   |
+    | `L`   | `LINES`          |
+    | `LL`  | `LINE_LOOP`      |
+    | `LS`  | `LINE_STRIP`     |
+    | `P`   | `POINTS`         |
     
 The primitive has 14,556 vertices (`14,556V`), is drawn using 46,356 indices, 
 has 14,556 normals and 14,556 texture coordinates (set 0). If there were a second 
@@ -108,13 +108,13 @@ This material has no transparency (`opaque`), other options are `alpha-mask`
 and `alpha-blend`. The set of characters between brackets lists the different
 textures used in this material. The possible types are:
 
-   Type  Texture                   Notes
-   ----  ------------------------  ------------------------------------
-   `BC`  baseColorTexture          (for pbrMetallicRoughness materials)
-   `MR`  metallicRoughnessTexture  (for pbrMetallicRoughness materials)
-   `N`   normalTexture
-   `E`   emissiveTexture
-   `O`   occlusionTexture
+   | Type | Texture                  | Notes                                |
+   | ---- | ------------------------ | ------------------------------------ |
+   |`BC`  | baseColorTexture         | (for pbrMetallicRoughness materials) |
+   |`MR`  | metallicRoughnessTexture | (for pbrMetallicRoughness materials) |
+   |`N`   | normalTexture            |                                      |
+   |`E`   | emissiveTexture          |                                      |
+   |`O`   | occlusionTexture         |                                      |
    
 If a material line includes `2S` then this means that the material is
 double-sided (i.e. back-face culling disabled).
