@@ -58,6 +58,10 @@ print('JSON chunk (%s bytes)' % format(chunk_length, ',d'))
 js = f.read(chunk_length).decode('utf8')
 j = json.loads(js)
 
+if 'buffers' not in j:
+    print('No buffers defined in file, exiting!')
+    sys.exit(-1)
+    
 buffers = j['buffers']
 bufferviews = j['bufferViews']
 accessors = j['accessors']
