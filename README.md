@@ -11,7 +11,7 @@ script.
 
 Dependencies: 
 - Python 3.x
-- PIL or PILLOW (for the `-l` option, see below)
+- Optional: [Pillow](https://pypi.org/project/Pillow/) (or PIL). This is to use the `-l` option, see below.
 
 
 ## Example
@@ -148,7 +148,7 @@ Images:
 As this requires reading and parsing the image data (which may take some time 
 for large files, or many images) this option is not enabled by default.
 
-Note that this option requires the PIL(LOW) `Image` module to be available.
+Note that this option requires the Pillow (or PIL) `Image` module to be available.
 
 ### Dump accessor values (`-a`)
 
