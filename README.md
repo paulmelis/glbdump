@@ -3,11 +3,11 @@
 [glTF](https://github.com/KhronosGroup/glTF) is a really nice format, especially 
 when used in the binary (.glb) form. But sometimes you want to inspect what 
 exactly is inside a .glb file. For example, to check what makes a file so large, 
-to see the sizes of the different meshes or for verifying certain material properties.
+to see mesh properties after export or for verifying certain material properties.
 
 You could check the JSON chunk at the start of a .glb file (e.g. by loading
-it in a text editor), but that's not really convenient. Hence this little utility 
-script.
+it in a text editor, or grepping the .glb itself), but that's not really convenient. 
+Hence this little utility script.
 
 Dependencies: 
 - Python 3.x
