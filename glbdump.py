@@ -236,21 +236,21 @@ if 'meshes' in j:
         modechars = ['P', 'L', 'LL', 'LS', 'T', 'TS', 'TF']
         modes = ','.join(map(lambda m: modechars[m], modes))
         
-        s = '[%4d] %12s bytes  %4dP %-5s  %s' % \
-            (meshidx, format(total_accessor_size, ',d'), len(m['primitives']), modes, '"'+m['name']+'"')
-            
+        s = '[%4d] %s' % (meshidx, '"'+m['name']+'"')
         print(s)
         
-        s = '       %8sV %8sI' % (format(vertices, ',d'), format(indices, ',d'))
+        d = '%8sV %8sI' % (format(vertices, ',d'), format(indices, ',d'))
         if color0 > 0:
-            s += ' %8sC0' % format(color0, ',d')
+            d += ' %8sC0' % format(color0, ',d')
         if normals > 0:
-            s += ' %8sN' % format(normals, ',d')
+            d += ' %8sN' % format(normals, ',d')
         if texcoord0 > 0:
-            s += ' %8sT0' % format(texcoord0, ',d')
+            d += ' %8sT0' % format(texcoord0, ',d')
         if texcoord1 > 0:
-            s += ' %8sT1' % format(texcoord1, ',d')
+            d += ' %8sT1' % format(texcoord1, ',d')
             
+        s = '       %12s bytes  %3dP %-3s  %s' % \
+            (format(total_accessor_size, ',d'), len(m['primitives']), modes, d)            
         print(s)
 
 if 'materials' in j:
