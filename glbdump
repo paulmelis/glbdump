@@ -8,24 +8,40 @@ if len(sys.argv) < 1 or '-h' in sys.argv:
     print()
     print('Options:')
     print('  -i  Dump images to files')
+    print('  -l  Load images and show their properties')  
     print('  -a  Dump accessor values')
     print()
     sys.exit(-1)
 
 glbfile = sys.argv[-1]
-assert os.path.isfile(glbfile)
+if not os.path.isfile(glbfile):
+    print('Error: %s does not appear to be a file!' % glbfile)
+    sys.exit(-1)
+        
 options = sys.argv[1:-1]
 
 dump_images = False
 dump_accessor_values = False
 read_binary_chunk = False
+show_image_properties = False
 
-if '-i' in options:
-    dump_images = True
-    read_binary_chunk = True
 if '-a' in options:
     dump_accessor_values = True
     read_binary_chunk = True
+if '-i' in options:
+    dump_images = True
+    read_binary_chunk = True
+if '-l' in options:
+    show_image_properties = True
+    read_binary_chunk = True
+    
+if show_image_properties:
+    from io import BytesIO
+    try:
+        from PIL import Image
+    except ImportError:
+        print('The -I option needs the PIL(LOW) package, which could not be loaded!')
+        sys.exit(-1)
 
 stats = os.stat(glbfile)
 f = open(glbfile, 'rb')
@@ -142,14 +158,27 @@ if 'images' in j:
         length = bv['byteLength']
         
         name = '"'+i['name']+'"' if 'name' in i else '<unnamed>'
-        mimetype = i['mimeType']
+        mimetype = i['mimeType']            
         
-        print('[%4d] %12s bytes  %-12s %s' % (idx, format(length,',d'), i['mimeType'], name))
-        
-        if dump_images:            
+        if show_image_properties or dump_images:
             assert bv['buffer'] == 0
             offset = bv['byteOffset']
             imgfiledata = buffer0data[offset:offset+length]            
+                
+        imgprops = ''
+        if show_image_properties:
+            f = BytesIO(imgfiledata)
+            try:
+                img = Image.open(f)
+                r = '%dx%d' % (img.size[0], img.size[1])
+                imgprops = '%11s %s' % (r, img.mode)
+            except IOError as e:
+                imgprops = '(error: %s)' % e
+                
+        print('[%4d] %12s bytes  %-12s %-40s %s' % \
+            (idx, format(length,',d'), i['mimeType'], name, imgprops))
+        
+        if dump_images:            
             try:
                 ext = {
                     'image/jpeg':   'jpg',

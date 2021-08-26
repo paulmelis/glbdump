@@ -9,7 +9,9 @@ You could check the JSON chunk at the start of a .glb file (e.g. by loading
 it in a text editor), but that's not really convenient. Hence this little utility 
 script.
 
-Dependencies: Python 3.x
+Dependencies: 
+- Python 3.x
+- PIL or PILLOW (for the `-l` option, see below)
 
 
 ## Example
@@ -120,13 +122,38 @@ double-sided (i.e. back-face culling disabled).
 
 ## Options
 
+### Write images to files (`-i`)
+
 You can dump the embedded images to files with the `-i` option. These will be
 written to files of the form `img-0000.<ext>`, with the extension depending
 on the mime-type. Note that this writes the image file bytes as embedded 
 in the .glb file, no processing or conversion is done whatsoever.
 
+### Load images (`-l`)
+
+With the `-l` option each block of image data is loaded, for determining
+image properties (resolution and channels). 
+
+```
+$ ./glbdump -l ~/models/glTF-Sample-Models/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb
+...
+Images:
+[   0]      935,629 bytes  image/jpeg   <unnamed>                                  2048x2048 RGB
+[   1]    1,300,661 bytes  image/jpeg   <unnamed>                                  2048x2048 RGB
+[   2]       97,499 bytes  image/jpeg   <unnamed>                                  2048x2048 RGB
+[   3]      361,678 bytes  image/jpeg   <unnamed>                                  2048x2048 RGB
+[   4]      517,757 bytes  image/jpeg   <unnamed>                                  2048x2048 RGB
+```
+
+As this requires reading and parsing the image data (which may take some time 
+for large files, or many images) this option is not enabled by default.
+
+Note that this option requires the PIL(LOW) `Image` module to be available.
+
+### Dump accessor values (`-a`)
+
 You can dump the row values in the accessors with the `-a` option, which allows
-inspecting of the values. For example:
+inspecting of the low-level values. For example:
 
 ```
 $ ./glbdump -a ~/glTF-Sample-Models/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb
@@ -183,4 +210,4 @@ exported by Blender, plus some samples files from the Khronos repository.
 
 Not all possible contents of a glTF file is dumped as output. I.e, there may
 be more things in a .glb file than are shown. Plus, some exotic features are 
-not recognized and/or not handled correctly.
+not recognized and/or not handled correctly (such as multiple buffers).
