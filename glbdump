@@ -241,6 +241,7 @@ if 'meshes' in j:
         total_accessor_size = 0
         vertices = 0
         normals = 0
+        tangents = 0
         color0 = 0
         texcoord0 = 0
         texcoord1 = 0
@@ -258,6 +259,11 @@ if 'meshes' in j:
                 accidx = attrs['NORMAL']
                 normals += accessors[accidx]['count']
                 accessor_uses[accidx] = (meshidx, primidx, 'N')
+                total_accessor_size += accessor_size(accidx)
+            if 'TANGENT' in attrs:
+                accidx = attrs['TANGENT']
+                tangents += accessors[accidx]['count']
+                accessor_uses[accidx] = (meshidx, primidx, 'G')
                 total_accessor_size += accessor_size(accidx)
             if 'COLOR_0' in attrs:
                 accidx = attrs['COLOR_0']
@@ -362,7 +368,9 @@ print('Accessors:')
 for idx, accessor in enumerate(accessors):
     bv = bufferviews[accessor['bufferView']]
     bytelength = bv['byteLength']
-    byteoffset = bv['byteOffset']
+    byteoffset = 0
+    if 'byteOffset' in bv:
+        byteoffset = bv['byteOffset']
     
     comptype = accessor['componentType']
     if comptype not in component_types:
@@ -373,10 +381,13 @@ for idx, accessor in enumerate(accessors):
     type = accessor['type']
     count = accessor['count']
     
-    meshidx, primidx, use = accessor_uses[idx]
-        
-    print('[%4d] %8sx  %-6s  %-14s  %11s bytes  (M%d "%s", P%d, %s)' % \
-        (idx, format(count, ',d'), type, compdesc, format(bytelength, ',d'), meshidx, j['meshes'][meshidx]['name'], primidx, use))
+    if idx in accessor_uses:
+        meshidx, primidx, use = accessor_uses[idx]        
+        print('[%4d] %8sx  %-6s  %-14s  %11s bytes  (M%d "%s", P%d, %s)' % \
+            (idx, format(count, ',d'), type, compdesc, format(bytelength, ',d'), meshidx, j['meshes'][meshidx]['name'], primidx, use))
+    else:
+        print('[%4d] %8sx  %-6s  %-14s  %11s bytes  (unknown use)' % \
+            (idx, format(count, ',d'), type, compdesc, format(bytelength, ',d')))
             
     if dump_accessor_values and (comptype in component_types):        
         

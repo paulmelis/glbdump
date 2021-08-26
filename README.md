@@ -95,7 +95,7 @@ drawn as a set of TRIANGLES (`T`). The possible types are:
 The primitive has 14,556 vertices (`14,556V`), is drawn using 46,356 indices, 
 has 14,556 normals and 14,556 texture coordinates (set 0). If there were a second 
 set of texture coordinates these would be listed as `T1`. Vertex colors would be 
-listed as `C0`. 
+listed as `C0`. Tangent vectors as `G`.
 
 ### Materials
 
@@ -202,6 +202,8 @@ Accessors:
   [14555]     0.996779     1.471621   
 ```
 
+The use for each accessor is listed as well, refering to the mesh, primitive and
+type of data defined. 
 
 ## Disclaimer
 
@@ -210,4 +212,4 @@ exported by Blender, plus some samples files from the Khronos repository.
 
 Not all possible contents of a glTF file is dumped as output. I.e, there may
 be more things in a .glb file than are shown. Plus, some exotic features are 
-not recognized and/or not handled correctly (such as multiple buffers).
+not recognized and/or not handled correctly (such as multiple buffers or extensions).
