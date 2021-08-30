@@ -24,7 +24,7 @@
 import sys, array, json, os
 from struct import unpack
 
-if len(sys.argv) < 1 or '-h' in sys.argv:
+if len(sys.argv) == 1 or '-h' in sys.argv:
     print('Usage: %s [options] file.glb' % sys.argv[0])
     print()
     print('Options:')
