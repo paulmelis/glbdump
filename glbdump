@@ -28,9 +28,11 @@ if len(sys.argv) == 1 or '-h' in sys.argv:
     print('Usage: %s [options] file.glb' % sys.argv[0])
     print()
     print('Options:')
-    print('  -i  Dump images to files')
-    print('  -l  Load images and show their properties')  
     print('  -a  Dump accessor values')
+    print('  -i  Dump images to files')
+    print('  -j  Dump JSON chunk (formatted)')
+    print('  -l  Load images and show their properties')
+    print('  -p  Dump per-primitive information')
     print()
     sys.exit(-1)
 
@@ -41,8 +43,10 @@ if not os.path.isfile(glbfile):
         
 options = sys.argv[1:-1]
 
-dump_images = False
 dump_accessor_values = False
+dump_images = False
+dump_json_chunk = False
+dump_primitive_information = False
 read_binary_chunk = False
 show_image_properties = False
 
@@ -52,17 +56,23 @@ if '-a' in options:
 if '-i' in options:
     dump_images = True
     read_binary_chunk = True
+if '-j' in options:
+    dump_json_chunk = True
 if '-l' in options:
     show_image_properties = True
     read_binary_chunk = True
+if '-p' in options:
+    dump_primitive_information = True
     
 if show_image_properties:
     from io import BytesIO
     try:
         from PIL import Image
     except ImportError:
-        print('The -I option needs the PIL(LOW) package, which could not be loaded!')
+        print('The -l option needs the PIL(LOW) package, which could not be loaded!')
         sys.exit(-1)
+        
+# Read file
 
 stats = os.stat(glbfile)
 f = open(glbfile, 'rb')
@@ -94,6 +104,10 @@ print('JSON chunk (%s bytes)' % format(chunk_length, ',d'))
 
 js = f.read(chunk_length).decode('utf8')
 j = json.loads(js)
+
+if dump_json_chunk:
+    # And back to JSON text :)
+    print(json.dumps(j, indent=4, sort_keys=True))
 
 if 'buffers' not in j:
     print('No buffers defined in file, exiting!')
@@ -131,11 +145,18 @@ f.close()
 # Dump!
 
 print()
-print('Asset version %s' % j['asset']['version'])
-print('Asset generator "%s"' % j['asset']['generator'])
+print('Asset Version   : %s' % j['asset']['version'])
+print('      Generator : "%s"' % j['asset']['generator'])
 if j['asset']['version'] != '2.0':
     print('Warning: not sure if we understand version != 2.0, but continuing anyway')
-
+    
+if 'extensionsRequired' in j:    
+    er = ', '.join(j['extensionsRequired'])
+    eu = ', '.join(j['extensionsUsed'])
+    print()
+    print('Extensions (used)     :', eu)
+    print('           (required) :', er)
+    
 print()
 print('Elements:')
 print('%4d nodes' % len(j['nodes']))
@@ -230,95 +251,183 @@ array_types = {
 component_elements = {
     'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4
 }
+
+# See primitive.mode in gltf spec
+primitive_mode_chars = ['P', 'L', 'LL', 'LS', 'T', 'TS', 'TF']
     
 def accessor_size(accidx):
     a = accessors[accidx]
     return a['count'] * component_sizes[a['componentType']] * component_elements[a['type']]
+    
+def quote(s, maxlen=0):
+    if maxlen > 0 and len(s)+4 > maxlen:
+        return '"%s...' % s[:maxlen-4]
+    else:
+        return '"%s"' % s
 
 if 'meshes' in j:
     print()
     print('Meshes:')
     for meshidx, m in enumerate(j['meshes']):
+        
         total_accessor_size = 0
-        vertices = 0
-        normals = 0
-        tangents = 0
-        color0 = 0
-        texcoord0 = 0
-        texcoord1 = 0
-        indices = 0
-        modes = set([])
+        
+        total_vertex_count = 0
+        total_normal_count = 0
+        total_tangent_count = 0
+        total_color0_count = 0
+        total_texcoord0_count = 0
+        total_texcoord1_count = 0
+        total_index_count = 0
+        
+        all_modes = set([])
+        all_extensions = set([])
+        lines = []
+        
+        num_primitives = len(m['primitives'])
+        
         for primidx, p in enumerate(m['primitives']):
+                        
+            # Triangles by default
+            mode = p['mode'] if 'mode' in p else 4
+            all_modes.add(mode)                        
+            
+            draco_compressed = False
+            draco_data = None
+            extensions = set()
+            if 'extensions' in p:
+                for ename, edata in p['extensions'].items():
+                    if ename == 'KHR_draco_mesh_compression':
+                        draco_compressed = True
+                        draco_data = edata
+                    extensions.add(ename)
+                all_extensions.update(extensions)
+                    
+            if draco_compressed:
+                bvidx = draco_data['bufferView']                
+                total_accessor_size += bufferviews[bvidx]['byteLength']
+                                   
             attrs = p['attributes']
             
             accidx = attrs['POSITION']
-            vertices += accessors[accidx]['count']
+            vertex_count = accessors[accidx]['count']
+            total_vertex_count += vertex_count
             accessor_uses[accidx] = (meshidx, primidx, 'P')
-            total_accessor_size += accessor_size(accidx)
+            if not draco_compressed:
+                total_accessor_size += accessor_size(accidx)
+                
+            normal_count = 0
+            tangent_count = 0
+            color0_count = 0
+            texcoord0_count = 0
+            texcoord1_count = 0
             
             if 'NORMAL' in attrs:
                 accidx = attrs['NORMAL']
-                normals += accessors[accidx]['count']
+                normal_count = accessors[accidx]['count']
+                total_normal_count += normal_count
                 accessor_uses[accidx] = (meshidx, primidx, 'N')
-                total_accessor_size += accessor_size(accidx)
+                if not draco_compressed:
+                    total_accessor_size += accessor_size(accidx)
             if 'TANGENT' in attrs:
                 accidx = attrs['TANGENT']
-                tangents += accessors[accidx]['count']
+                tangent_count = accessors[accidx]['count']
+                total_tangent_count += tangent_count
                 accessor_uses[accidx] = (meshidx, primidx, 'G')
-                total_accessor_size += accessor_size(accidx)
+                if not draco_compressed:
+                    total_accessor_size += accessor_size(accidx)
             if 'COLOR_0' in attrs:
                 accidx = attrs['COLOR_0']
-                color0 += accessors[idx]['count']
+                color0_count = accessors[idx]['count']
+                total_color0_count += color0_count
                 accessor_uses[accidx] = (meshidx, primidx, 'C0')
-                total_accessor_size += accessor_size(accidx)
+                if not draco_compressed:
+                    total_accessor_size += accessor_size(accidx)
             if 'TEXCOORD_0' in attrs:
                 accidx = attrs['TEXCOORD_0']
-                texcoord0 += accessors[accidx]['count']
+                texcoord0_count = accessors[accidx]['count']
+                total_texcoord0_count += texcoord0_count
                 accessor_uses[accidx] = (meshidx, primidx, 'T0')
-                total_accessor_size += accessor_size(accidx)
+                if not draco_compressed:
+                    total_accessor_size += accessor_size(accidx)
             if 'TEXCOORD_1' in attrs:
                 accidx = attrs['TEXCOORD_1']
-                texcoord1 += accessors[accidx]['count']
+                texcoord1_count = accessors[accidx]['count']
+                total_texcoord1_count += texcoord1_count
                 accessor_uses[accidx] = (meshidx, primidx, 'T1')
-                total_accessor_size += accessor_size(accidx)
+                if not draco_compressed:
+                    total_accessor_size += accessor_size(accidx)
                 
             accidx = p['indices']
-            indices += accessors[accidx]['count']
+            index_count = accessors[accidx]['count']
+            total_index_count += index_count
             accessor_uses[accidx] = (meshidx, primidx, 'I')
-            total_accessor_size += accessor_size(accidx)
-            
-            if 'mode' in p:
-                modes.add(p['mode'])
-            else:
-                # Triangles by default
-                modes.add(4)                                    
-            
-        # See primitive.mode in gltf spec
-        modechars = ['P', 'L', 'LL', 'LS', 'T', 'TS', 'TF']
-        modes = ','.join(map(lambda m: modechars[m], modes))
-        
-        s = '[%4d] %s' % (meshidx, '"'+m['name']+'"')
-        print(s)
-        
-        d = '%8sV %8sI' % (format(vertices, ',d'), format(indices, ',d'))
-        if color0 > 0:
-            d += ' %8sC0' % format(color0, ',d')
-        if normals > 0:
-            d += ' %8sN' % format(normals, ',d')
-        if texcoord0 > 0:
-            d += ' %8sT0' % format(texcoord0, ',d')
-        if texcoord1 > 0:
-            d += ' %8sT1' % format(texcoord1, ',d')
-            
-        s = '       %12s bytes  %3dP %-3s  %s' % \
-            (format(total_accessor_size, ',d'), len(m['primitives']), modes, d)            
-        print(s)
+            if not draco_compressed:
+                total_accessor_size += accessor_size(accidx)
+                
+            if dump_primitive_information:
 
+                s = '       [%2d] %s' % (primidx, primitive_mode_chars[mode])
+                
+                d = '%8sV %8sI' % (format(vertex_count, ',d'), format(index_count, ',d'))
+                if color0_count > 0:
+                    d += ' %8sC0' % format(color0_count, ',d')
+                if normal_count > 0:
+                    d += ' %8sN' % format(normal_count, ',d')
+                if texcoord0_count > 0:
+                    d += ' %8sT0' % format(texcoord0_count, ',d')
+                if texcoord1_count > 0:
+                    d += ' %8sT1' % format(texcoord1_count, ',d')
+                    
+                s += ' %s' % d
+                    
+                if len(extensions) > 0:
+                    e = ','.join(sorted(extensions))
+                    s += '  %s' % e
+                                
+                lines.append(s)
+
+            
+        all_modes = ','.join(map(lambda m: primitive_mode_chars[m], all_modes))
+        all_modes = '[' + all_modes + ']'
+        
+        d = '%8sV %8sI' % (format(total_vertex_count, ',d'), format(total_index_count, ',d'))
+        if total_color0_count > 0:
+            d += ' %8sC0' % format(total_color0_count, ',d')
+        if total_normal_count > 0:
+            d += ' %8sN' % format(total_normal_count, ',d')
+        if total_texcoord0_count > 0:
+            d += ' %8sT0' % format(total_texcoord0_count, ',d')
+        if total_texcoord1_count > 0:
+            d += ' %8sT1' % format(total_texcoord1_count, ',d')
+            
+        e = ''
+        if len(all_extensions) > 0:
+            e = ','.join(sorted(all_extensions))
+        
+        if dump_primitive_information:
+            
+            s = '[%4d] %-24s  %12s bytes  %2dP %-5s  %s' % \
+                (meshidx, quote(m['name'],24), format(total_accessor_size, ',d'), num_primitives, all_modes, d)
+            print(s)
+            
+            # Per-primitive data
+            for line in lines:
+                print(line)
+                
+        else:        
+            
+            s = '[%4d] %12s bytes  %2dP %-5s  %-24s  %s  %s' % \
+                (meshidx, format(total_accessor_size, ',d'), num_primitives, all_modes, quote(m['name'],24), d, e)
+            print(s)
+                                
+            
+        
 if 'materials' in j:
     print()
     print('Materials:')
     for idx, m in enumerate(j['materials']):
-        name = '"'+m['name']+'"' if 'name' in m else '<unnamed>'
+        name = quote(m['name']) if 'name' in m else '<unnamed>'
         
         double_sided = '2S' if ('doubleSided' in m and m['doubleSided']) else ''
         
@@ -352,12 +461,19 @@ if 'materials' in j:
         else:
             textures = ''
         
-        print('[%4d] %2s  %-11s  %-15s %s' % (idx, double_sided, alpha_mode, textures, name))
+        print('[%4d] %-11s  %2s  %-13s %s' % (idx, alpha_mode, double_sided, textures, name))
 
 print()
 print('Buffers:')
 for idx, b in enumerate(buffers):
     print('[%4d] %11s bytes' % (idx, format(b['byteLength'], ',d')))
+    
+print()
+print('Buffer views:')
+for idx, bv in enumerate(bufferviews):
+    b = 'B%d' % bv['buffer']
+    o = 'O%s' % format(bv['byteOffset'], ',d') if 'byteOffset' in bv else 'O0'
+    print('[%4d] %11s bytes   %-4s %-4s' % (idx, format(bv['byteLength'], ',d'), b, o))
     
 fmt_strings = {
     5120: '%3d', 5121: '%3d', 5122: '%5d', 5123: '%5d', 
@@ -367,31 +483,41 @@ fmt_strings = {
 print()
 print('Accessors:')
 for idx, accessor in enumerate(accessors):
-    bvidx = accessor['bufferView'] if 'bufferView' in accessor else 0
-    bv = bufferviews[bvidx]
-    bytelength = bv['byteLength']
-    byteoffset = 0
-    if 'byteOffset' in bv:
-        byteoffset = bv['byteOffset']
     
-    comptype = accessor['componentType']
+    comptype = accessor['componentType']    # 5120 (BYTE), ...
     if comptype not in component_types:
         compdesc = '??? (%d)' % comptype
     else:
         compdesc = component_types[comptype]
-        
-    type = accessor['type']
-    count = accessor['count']
+            
+    type = accessor['type']                 # SCALAR, VEC3, ...
+    count = accessor['count']    
     
     if idx in accessor_uses:
-        meshidx, primidx, use = accessor_uses[idx]        
-        print('[%4d] %8sx  %-6s  %-14s  %11s bytes  (M%d "%s", P%d, %s)' % \
-            (idx, format(count, ',d'), type, compdesc, format(bytelength, ',d'), meshidx, j['meshes'][meshidx]['name'], primidx, use))
+        meshidx, primidx, use = accessor_uses[idx]
+        use = '(M%d "%s", P%d, %s)' % (meshidx, j['meshes'][meshidx]['name'], primidx, use)
     else:
-        print('[%4d] %8sx  %-6s  %-14s  %11s bytes  (unknown use)' % \
-            (idx, format(count, ',d'), type, compdesc, format(bytelength, ',d')))
-            
-    if dump_accessor_values and (comptype in component_types):        
+        use = '(unknown use)' 
+    
+    if 'bufferView' in accessor:
+        bvidx = accessor['bufferView']
+        bv = bufferviews[bvidx]
+        
+        bytelength = bv['byteLength']
+        byteoffset = 0
+        if 'byteOffset' in bv:
+            byteoffset = bv['byteOffset']
+    
+        print('[%4d] %8sx  %-6s  %-14s  %11s bytes  %s' % \
+            (idx, format(count, ',d'), type, compdesc, format(bytelength, ',d'), use))
+                
+    else:
+        # Assume use in draco compression, show expected uncompressed size
+        esize = count * component_elements[type] * component_sizes[comptype]
+        print('[%4d] %8sx  %-6s  %-14s  %11s bytes* %s' % \
+            (idx, format(count, ',d'), type, compdesc, format(esize, ',d'), use))
+                                
+    if ('bufferView' in accessor) and dump_accessor_values and (comptype in component_types):        
         
         a = array.array(array_types[comptype])
         a.frombytes(buffer0data[byteoffset:byteoffset+bytelength])
@@ -415,5 +541,5 @@ for idx, accessor in enumerate(accessors):
                 print(fmt % (idx, a[4*idx], a[4*idx+1], a[4*idx+2], a[4*idx+3]))
         else:
             raise ValueError('Unhandled accessor type "%s"' % type)
-        
+                
 print()

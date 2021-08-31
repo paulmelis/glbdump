@@ -13,6 +13,17 @@ Dependencies:
 - Python 3.x
 - Optional: [Pillow](https://pypi.org/project/Pillow/) (or PIL). This is to use the `-l` option, see below.
 
+## Options
+
+```
+Usage: glbdump [options] file.glb
+
+Options:
+  -a  Dump accessor values
+  -i  Dump images to files
+  -j  Dump JSON chunk
+  -l  Load images and show their properties
+```
 
 ## Example
 
