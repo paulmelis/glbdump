@@ -16,13 +16,15 @@ Dependencies:
 ## Options
 
 ```
-Usage: glbdump [options] file.glb
+Usage: ./glbdump [options] file.glb
 
 Options:
   -a  Dump accessor values
   -i  Dump images to files
-  -j  Dump JSON chunk
+  -j  Dump JSON chunk (formatted)
   -l  Load images and show their properties
+  -p  Dump per-primitive information
+
 ```
 
 ## Example
@@ -34,8 +36,8 @@ Total file size 3,773,916 bytes
 
 JSON chunk (2,148 bytes)
 
-Asset version 2.0
-Asset generator "Khronos Blender glTF 2.0 exporter"
+Asset Version   : 2.0
+      Generator : "Khronos Blender glTF 2.0 exporter"
 
 Elements:
    1 nodes
@@ -48,21 +50,31 @@ Elements:
    4 accessors  (558,504 bytes)
 
 Images:
-[   0]      935,629 bytes  image/jpeg   <unnamed>
-[   1]    1,300,661 bytes  image/jpeg   <unnamed>
-[   2]       97,499 bytes  image/jpeg   <unnamed>
-[   3]      361,678 bytes  image/jpeg   <unnamed>
-[   4]      517,757 bytes  image/jpeg   <unnamed>
+[   0]      935,629 bytes  image/jpeg   <unnamed>                                
+[   1]    1,300,661 bytes  image/jpeg   <unnamed>                                
+[   2]       97,499 bytes  image/jpeg   <unnamed>                                
+[   3]      361,678 bytes  image/jpeg   <unnamed>                                
+[   4]      517,757 bytes  image/jpeg   <unnamed>                                
 
 Meshes:
-[   0] "mesh_helmet_LP_13930damagedHelmet"
-            558,504 bytes    1P T      14,556V   46,356I   14,556N   14,556T0
+[   0]      558,504 bytes   1P [T]    "mesh_helmet_LP_13930...    14,556V   46,356I   14,556N   14,556T0  
 
 Materials:
-[   0]     opaque       [BC MR N E O]   "Material_MR"
+[   0] opaque           [BC MR N E O] "Material_MR"
 
 Buffers:
 [   0]   3,771,740 bytes
+
+Buffer views:
+[   0]      92,712 bytes   B0   O0  
+[   1]     174,672 bytes   B0   O92,712
+[   2]     174,672 bytes   B0   O267,384
+[   3]     116,448 bytes   B0   O442,056
+[   4]     935,629 bytes   B0   O558,504
+[   5]   1,300,661 bytes   B0   O1,494,136
+[   6]      97,499 bytes   B0   O2,794,800
+[   7]     361,678 bytes   B0   O2,892,300
+[   8]     517,757 bytes   B0   O3,253,980
 
 Accessors:
 [   0]   46,356x  SCALAR  UNSIGNED_SHORT       92,712 bytes  (M0 "mesh_helmet_LP_13930damagedHelmet", P0, I)
@@ -85,8 +97,7 @@ more explanation for certain types of data (using the example file shown above).
 
 ```
 Meshes:
-[   0] "mesh_helmet_LP_13930damagedHelmet"
-            558,504 bytes    1P T      14,556V   46,356I   14,556N   14,556T0
+[   0]      558,504 bytes   1P [T]    "mesh_helmet_LP_13930...    14,556V   46,356I   14,556N   14,556T0  
 ```
 
 This shows that mesh 0 consists of a single primitive (`1P`). Each set of primitive 
@@ -112,7 +123,7 @@ listed as `C0`. Tangent vectors as `G`.
 
 ```
 Materials:
-[   0]     opaque       [BC MR N E O]   "Material_MR"
+[   0] opaque           [BC MR N E O] "Material_MR"
 ```
 
 This material has no transparency (`opaque`), other options are `alpha-mask`
@@ -171,8 +182,8 @@ $ ./glbdump -a ~/glTF-Sample-Models/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.
 ...
 
 Meshes:
-[   0] "mesh_helmet_LP_13930damagedHelmet"
-            558,504 bytes    1P T      14,556V   46,356I   14,556N   14,556T0
+[   0]      558,504 bytes   1P [T]    "mesh_helmet_LP_13930...    14,556V   46,356I   14,556N   14,556T0 
+
 ...
 
 Accessors:
