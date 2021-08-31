@@ -161,7 +161,8 @@ print('%4d buffers    (%s bytes)' % (len(buffers), format(totalbufsize, ',d')))
 
 totalaccsize = 0
 for a in accessors:
-    totalaccsize += bufferviews[a['bufferView']]['byteLength']
+    bvidx = a['bufferView'] if 'bufferView' in a else 0
+    totalaccsize += bufferviews[bvidx]['byteLength']
 print('%4d accessors  (%s bytes)' % (len(accessors), format(totalaccsize, ',d')))
 
 if 'cameras' in j:
@@ -366,7 +367,8 @@ fmt_strings = {
 print()
 print('Accessors:')
 for idx, accessor in enumerate(accessors):
-    bv = bufferviews[accessor['bufferView']]
+    bvidx = accessor['bufferView'] if 'bufferView' in accessor else 0
+    bv = bufferviews[bvidx]
     bytelength = bv['byteLength']
     byteoffset = 0
     if 'byteOffset' in bv:
