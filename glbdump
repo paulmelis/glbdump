@@ -338,7 +338,7 @@ if 'meshes' in j:
                     total_accessor_size += accessor_size(accidx)
             if 'COLOR_0' in attrs:
                 accidx = attrs['COLOR_0']
-                color0_count = accessors[idx]['count']
+                color0_count = accessors[accidx]['count']
                 total_color0_count += color0_count
                 accessor_uses[accidx] = (meshidx, primidx, 'C0')
                 if not draco_compressed:
