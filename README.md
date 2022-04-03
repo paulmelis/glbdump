@@ -2,8 +2,9 @@
 
 [glTF](https://github.com/KhronosGroup/glTF) is a really nice format, especially 
 when used in the binary (.glb) form. But sometimes you want to inspect what 
-exactly is inside a .glb file. For example, to check what makes a file so large, 
-to see mesh properties after export or for verifying certain material properties.
+exactly is inside a .glb file. For example, to check what makes a file so large
+(e.g. is it meshes or textures), to see mesh properties after export or for verifying 
+certain material properties.
 
 You could check the JSON chunk at the start of a .glb file (e.g. by loading
 it in a text editor, or grepping the .glb itself), but that's not really convenient. 
