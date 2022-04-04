@@ -94,6 +94,23 @@ the .glb file 3.2 MB is used for 5 images (textures) and 559 kB for mesh data.
 Most of the output should be straightforward to understand, but here is a bit
 more explanation for certain types of data (using the example file shown above).
 
+### Buffer views
+
+A buffer is a chunk of binary data, while a buffer view provides access to
+part of that buffer. In most cases a buffer view is defined by an offset in the
+underlying buffer (e.g. offset `O6,888` in `B0` for below), and the length of
+the view (e.g. `5,460 bytes`).
+
+It is possible for a buffer to hold interleaved data, in which case the buffer
+view will use a stride value (e.g. `S28` below), to denote the stride length
+in bytes from one value to the next.
+
+```
+Buffer views:
+[   0]       6,888 bytes   B0   O0       S28
+[   1]       5,460 bytes   B0   O6,888      
+```
+
 ### Meshes
 
 ```
