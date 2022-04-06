@@ -165,6 +165,9 @@ if 'cameras' in j:
 if 'images' in j:
     totalimsize = 0
     for i in j['images']:
+        if 'uri' in i:
+            print('Skipping external image ("%s")' % i['uri'])
+            continue
         totalimsize += bufferviews[i['bufferView']]['byteLength']
     print('%4d images     (%s bytes)' % (len(j['images']), format(totalimsize, ',d')))
 if 'materials' in j:
@@ -197,6 +200,11 @@ if 'images' in j:
     print()
     print('Images:')
     for idx, i in enumerate(j['images']):
+        if 'uri' in i:
+            print('[%4d] %s (external)' % \
+            (idx, i['uri']))
+            continue
+
         bv = bufferviews[i['bufferView']]
         length = bv['byteLength']
         
