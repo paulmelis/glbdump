@@ -523,7 +523,7 @@ for idx, accessor in enumerate(accessors):
         if 'byteOffset' in bv:
             byteoffset = bv['byteOffset']
     
-        print('[%4d] %8sx  %-6s  %-14s  %11s bytes  %s' % \
+        print('[%4d] %9sx  %-6s  %-14s  %11s bytes  %s' % \
             (idx, format(count, ',d'), type, compdesc, format(bytelength, ',d'), use))
                 
     else:
