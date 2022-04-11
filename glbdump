@@ -509,7 +509,7 @@ for idx, accessor in enumerate(accessors):
     if idx in accessor_uses:
         meshidx, primidx, use = accessor_uses[idx]        
         mesh = j['meshes'][meshidx]        
-        mesh_name = quote(mesh['name'],24) if 'name' in mesh else ''
+        mesh_name = ' '+quote(mesh['name'],24) if 'name' in mesh else ''
         use = '(M%d%s, P%d, %s)' % (meshidx, mesh_name, primidx, use)
     else:
         use = '(unknown use)' 
@@ -527,7 +527,7 @@ for idx, accessor in enumerate(accessors):
             (idx, format(count, ',d'), type, compdesc, format(bytelength, ',d'), use))
                 
     else:
-        # Assume use in draco compression, show expected uncompressed size
+        # Assume use of draco compression, show expected uncompressed size
         esize = count * component_elements[type] * component_sizes[comptype]
         print('[%4d] %8sx  %-6s  %-14s  %11s bytes* %s' % \
             (idx, format(count, ',d'), type, compdesc, format(esize, ',d'), use))
