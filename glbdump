@@ -365,13 +365,16 @@ if 'meshes' in j:
                 accessor_uses[accidx] = (meshidx, primidx, 'T1')
                 if not draco_compressed:
                     total_accessor_size += accessor_size(accidx)
-                
-            accidx = p['indices']
-            index_count = accessors[accidx]['count']
-            total_index_count += index_count
-            accessor_uses[accidx] = (meshidx, primidx, 'I')
-            if not draco_compressed:
-                total_accessor_size += accessor_size(accidx)
+                    
+            if 'indices' in p:            
+                accidx = p['indices']
+                index_count = accessors[accidx]['count']
+                total_index_count += index_count
+                accessor_uses[accidx] = (meshidx, primidx, 'I')
+                if not draco_compressed:
+                    total_accessor_size += accessor_size(accidx)
+            else:
+                index_count = 0
                 
             if dump_primitive_information:
 
@@ -532,7 +535,7 @@ for idx, accessor in enumerate(accessors):
         print('[%4d] %8sx  %-6s  %-14s  %11s bytes* %s' % \
             (idx, format(count, ',d'), type, compdesc, format(esize, ',d'), use))
                                 
-    if ('bufferView' in accessor) and dump_accessor_values and (comptype in component_types):        
+    if dump_accessor_values and ('bufferView' in accessor) and (comptype in component_types):        
         
         a = array.array(array_types[comptype])
         a.frombytes(buffer0data[byteoffset:byteoffset+bytelength])
