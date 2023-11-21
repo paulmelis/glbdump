@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # glbdump - Dump the contents of a Binary glTF (.glb) file
 #
-# Copyright 2021-2022, Paul E.C. Melis
+# Copyright 2021-2023, Paul E.C. Melis
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a 
 # copy of this software and associated documentation files (the "Software"), 
@@ -260,7 +260,7 @@ component_elements = {
     'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4
 }
 
-# See primitive.mode in gltf spec
+# See primitive.mode in gltf spec (https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#_mesh_primitive_mode)
 primitive_mode_chars = ['P', 'L', 'LL', 'LS', 'T', 'TS', 'TF']
     
 def accessor_size(accidx):
@@ -435,9 +435,12 @@ if 'meshes' in j:
             s = '[%4d] %12s bytes  %2dP %-5s  %-24s  %s  %s' % \
                 (meshidx, format(total_accessor_size, ',d'), num_primitives, all_modes, name, d, e)
             print(s)
-                                
-            
-        
+
+    print()
+    print('(#P = number of primitives, [Lines, Line Loop, Line Strip, Points, Triangles, Triangle Strip, Triangle Fan],')
+    print(' V = vertices, I = indices, N = normals, T0 = texcoord0s, T1 = textcoord1s, C0 = color0)')
+
+
 if 'materials' in j:
     print()
     print('Materials:')
@@ -477,6 +480,9 @@ if 'materials' in j:
             textures = ''
         
         print('[%4d] %-11s  %2s  %-13s %s' % (idx, alpha_mode, double_sided, textures, name))
+
+    print()
+    print('(2S = double-sided, BC = baseColorTexture, E = emmisiveTexture, MR = metallicRoughnessTexture, N = normalTexture, O = occlusionTexture)')
 
 print()
 print('Buffers:')
