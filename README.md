@@ -111,6 +111,8 @@ Buffer views:
 [   1]       5,460 bytes   B0   O6,888      
 ```
 
+XXX add description of target field
+
 ### Meshes
 
 ```

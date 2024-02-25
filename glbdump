@@ -491,11 +491,22 @@ for idx, b in enumerate(buffers):
     
 print()
 print('Buffer views:')
+BV_TARGETS = {
+    0x8892: 'GL_ARRAY_BUFFER',
+    0x8893: 'GL_ELEMENT_ARRAY_BUFFER'
+}
 for idx, bv in enumerate(bufferviews):
     b = 'B%d' % bv['buffer']
     o = 'O%s' % format(bv['byteOffset'], ',d') if 'byteOffset' in bv else 'O0'
     s = ' S%s' % format(bv['byteStride'], ',d') if 'byteStride' in bv else ''
-    print('[%4d] %11s bytes   %-4s %-8s%-4s' % (idx, format(bv['byteLength'], ',d'), b, o, s))
+    t = ''
+    if 'target' in bv:
+        target = bv['target']
+        if target in BV_TARGETS:
+            t = ' '+BV_TARGETS[target]
+        else:
+            t = ' (unknown target 0x%04x)' % target
+    print('[%4d] %11s bytes   %-5s %-8s%-4s%s' % (idx, format(bv['byteLength'], ',d'), b, o, s, t))
     
 fmt_strings = {
     5120: '%3d', 5121: '%3d', 5122: '%5d', 5123: '%5d', 
