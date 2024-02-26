@@ -543,8 +543,8 @@ for idx, accessor in enumerate(accessors):
         if 'byteOffset' in bv:
             byteoffset = bv['byteOffset']
     
-        print('[%4d] %9sx  %-6s  %-14s  %11s bytes  %s' % \
-            (idx, format(count, ',d'), type, compdesc, format(bytelength, ',d'), use))
+        print('[%4d] BV%d %9sx  %-6s  %-14s  %11s bytes  %s' % \
+            (idx, bvidx, format(count, ',d'), type, compdesc, format(bytelength, ',d'), use))
                 
     else:
         # Assume use of draco compression, show expected uncompressed size
